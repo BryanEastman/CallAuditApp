@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 from itertools import cycle
 import datetime as dt
+import sqlite3
 
-def generate_agent_data():
-    agent_ids = list(range(1, 501))
+def generate_agent_data(con: sqlite3.Connection):
+    agent_ids = list(range(0, 500))
     n_agents = len(agent_ids)
 
     agent_title_dict = {
@@ -47,28 +48,21 @@ def generate_agent_data():
 
     hierarchy_df = pd.concat([dialers_leaders_df, leaders_leaders_df])
 
-    # issue stemming from agent_data df, maybe unordered dict is causing issue?
-    agent_data = pd.DataFrame(
-        {
-            'AGENTID': [*agent_ids],
-            'AGENTTITLE': [*random_titles]
-        },
+    agent_data = pd.DataFrame.from_dict(
+        data = dict(enumerate(random_titles)),
+        columns=['AGENTTITLE'], orient='index'
     )
-    print(agent_data[agent_data.AGENTID.isin(dialers)])
-    # agents_df = pd.merge(
-    #     agent_data, hierarchy_df,
-    #     left_on='AGENTID', right_index=True,
-    #     how='left'
-    # )
 
-
-
+    agent_data.reset_index(inplace=True, names='AGENTID')
+    agents_df = pd.merge(
+        agent_data, hierarchy_df,
+        left_on='AGENTID', right_index=True,
+        how='left'
+    )
+    agents_df.fillna(501, inplace=True)
 
 def generate_call_data():
     call_ids = list(range(1, 100_001))
     call_date_ranges = [dt.date(2024, 8, 1) - dt.timedelta(days = x) for x in range(21)]
 
     return
-
-if __name__ == "__main__":
-    generate_agent_data()

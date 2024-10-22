@@ -1,7 +1,7 @@
 import cmd
 import sqlite3
 
-from backend.init.database import build_database
+from backend.init import dummy_data
 from init import *
 
 class Auditor(cmd.Cmd):
@@ -14,7 +14,7 @@ class Auditor(cmd.Cmd):
     def do_initialize(self, arg):
         "Build database and fill with dummy data"
         database.build_database(self.con)
-        database.generate_data(self.con)
+        dummy_data.generate_agent_data(self.con)
 
     def do_quit(self, arg):
         "Close databse connection and exit"

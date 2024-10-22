@@ -62,7 +62,7 @@ def generate_agent_data(con: sqlite3.Connection):
     agents_df.fillna(501, inplace=True)
 
 def generate_call_data():
-    call_ids = list(range(1, 100_001))
+    call_ids = list(range(0, 100_000))
     call_date_ranges = [dt.date(2024, 8, 1) - dt.timedelta(days = x) for x in range(21)]
 
     return

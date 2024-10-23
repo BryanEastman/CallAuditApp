@@ -1,3 +1,4 @@
+from posix import replace
 import pandas as pd
 import numpy as np
 from itertools import cycle
@@ -61,8 +62,76 @@ def generate_agent_data(con: sqlite3.Connection):
     )
     agents_df.fillna(501, inplace=True)
 
-def generate_call_data():
-    call_ids = list(range(0, 100_000))
-    call_date_ranges = [dt.date(2024, 8, 1) - dt.timedelta(days = x) for x in range(21)]
+    agents_df.to_sql(
+        if_exists='replace',
+        index=False,
+        con=con,
+        name='agent'
+    )
 
-    return
+def generate_call_data(con: sqlite3.Connection):
+    call_ids = list(range(0, 100_000))
+    n = len(call_ids)
+    call_date_ranges = [dt.date(2024, 8, 1) - dt.timedelta(days = x) for x in range(21)]
+    hours = list(range(9, 23))
+    mins = secs = list(range(0,59))
+
+    dialers = list(con.execute("SELECT agentid FROM agent WHERE agenttitle LIKE '%dialer'"))
+    dialer_id_list = [x[0] for x in dialers]
+
+    random_dialer = np.random.choice(
+        dialer_id_list,
+        size=n
+    )
+    random_date = np.random.choice(
+        call_date_ranges,
+        size=n
+    )
+    random_hour = np.random.choice(
+        hours,
+        size=n
+    )
+    random_min = np.random.choice(
+        mins,
+        size=n
+    )
+    random_sec = np.random.choice(
+        secs,
+        size=n
+    )
+    random_conversion = np.random.choice(
+        [True, False],
+        p=[.03,.97],
+        size=n,
+        replace=True
+    )
+    combined = list(
+        zip(
+            call_ids,
+            random_dialer,
+            random_date,
+            random_hour,
+            random_min,
+            random_sec,
+            random_conversion
+        )
+    )
+
+    call_datalist = [
+        (
+            *x[:2],
+            dt.datetime.combine(x[2], dt.time(*[t for t in x[-4:-1]])),
+            x[-1]
+        ) for x in combined
+    ]
+
+    calls_df = pd.DataFrame.from_records(
+        call_datalist, columns=['CALLID','AGENTID','CALLSTARTDATETIME','CONVERTED']
+    )
+
+    calls_df.to_sql(
+        name='call_data',
+        con=con,
+        if_exists='replace',
+        index=False
+    )

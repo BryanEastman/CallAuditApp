@@ -2,11 +2,18 @@ import sqlite3
 import os
 import datetime as dt
 
-def build_database(connection: sqlite3.Connection):
-    definition_file = './tables.sql'
+def build_database(con: sqlite3.Connection):
+    definition_filepath = r'./init/tables.sql'
+    with open(definition_filepath) as f:
+        sql = f.read()
+
+    print("building database")
+    print(sql)
 
     try:
-       connection.executescript(definition_file)
+       con.executescript(sql)
+       con.commit()
+       print("committed to database")
     except Exception as e:
        print(e)
 

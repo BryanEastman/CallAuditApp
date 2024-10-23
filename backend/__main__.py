@@ -1,8 +1,7 @@
 import cmd
 import sqlite3
 
-from backend.init import dummy_data
-from init import *
+from init import database, dummy_data
 
 class Auditor(cmd.Cmd):
     intro = "Welcome to call audit controller, Type help or ? to list commands"
@@ -15,6 +14,7 @@ class Auditor(cmd.Cmd):
         "Build database and fill with dummy data"
         database.build_database(self.con)
         dummy_data.generate_agent_data(self.con)
+        dummy_data.generate_call_data(self.con)
 
     def do_quit(self, arg):
         "Close databse connection and exit"

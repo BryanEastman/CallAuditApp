@@ -8,7 +8,6 @@ def build_database(con: sqlite3.Connection):
         sql = f.read()
 
     print("building database")
-    print(sql)
 
     try:
        con.executescript(sql)

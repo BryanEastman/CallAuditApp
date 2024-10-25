@@ -4,6 +4,26 @@ import numpy as np
 from itertools import cycle
 import datetime as dt
 import sqlite3
+import calendar
+
+def create_datedim(con: sqlite3.Connection):
+    datedim = calendar.Calendar().yeardatescalendar(2024)
+
+    def flatten(x):
+        if type(x) == list:
+           return [a for i in x for a in flatten(i)]
+        else:
+           return [x]
+
+    dateslist = flatten(datedim)
+    isodates = [i.isoformat() for i in dateslist]
+    datedf = pd.DataFrame(
+        {'DATE': dateslist}
+    )
+    datedf['WEEKDAY'] = datedf['DATE'].apply(lambda x: x.strftime('%A'))
+    print(datedf)
+
+    return datedim
 
 def generate_agent_data(con: sqlite3.Connection):
     agent_ids = list(range(0, 500))

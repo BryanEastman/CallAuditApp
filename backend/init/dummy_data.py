@@ -7,8 +7,8 @@ import sqlite3
 import calendar
 
 def create_datedim(con: sqlite3.Connection):
+    print("building calendar table")
     datedim = calendar.Calendar().yeardatescalendar(2024)
-
     def flatten(x):
         if type(x) == list:
            return [a for i in x for a in flatten(i)]
@@ -16,16 +16,23 @@ def create_datedim(con: sqlite3.Connection):
            return [x]
 
     dateslist = flatten(datedim)
-    isodates = [i.isoformat() for i in dateslist]
     datedf = pd.DataFrame(
         {'DATE': dateslist}
     )
     datedf['WEEKDAY'] = datedf['DATE'].apply(lambda x: x.strftime('%A'))
-    print(datedf)
+    datedf['YEARWEEK'] = datedf['DATE'].apply(lambda x: x.strftime('%Y%W'))
+
+    datedf.to_sql(
+        if_exists='replace',
+        index=False,
+        con=con,
+        name='datedim'
+    )
 
     return datedim
 
 def generate_agent_data(con: sqlite3.Connection):
+    print("generating agents")
     agent_ids = list(range(0, 500))
     n_agents = len(agent_ids)
 
@@ -92,9 +99,10 @@ def generate_agent_data(con: sqlite3.Connection):
     return agents_df
 
 def generate_call_data(con: sqlite3.Connection):
-    call_ids = list(range(0, 100_000))
+    print("generating call data")
+    call_ids = list(range(0, 10_000_000))
     n = len(call_ids)
-    call_date_ranges = [dt.date(2024, 8, 1) - dt.timedelta(days = x) for x in range(21)]
+    call_date_ranges = [dt.datetime.now().date() - dt.timedelta(days = x) for x in range(7*4*3)]
     hours = list(range(9, 23))
     mins = secs = list(range(0,59))
 

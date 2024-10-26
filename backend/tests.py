@@ -11,15 +11,19 @@ class TestDatabase(unittest.TestCase):
 
     test_db_path = rf'../data/test/test_tables.db'
     con = sqlite3.connect(test_db_path)
-    database.build_database(con)
-    date_gen = dummy_data.create_datedim(con)
-    agent_gen = dummy_data.generate_agent_data(con)
-    call_gen = dummy_data.generate_call_data(con)
+    cur = con.cursor()
+
+    if len(con.execute("SELECT * FROM call_data LIMIT 1").fetchone()) < 1:
+        database.build_database(con)
+        date_gen = dummy_data.create_datedim(con)
+        agent_gen = dummy_data.generate_agent_data(con)
+        call_gen = dummy_data.generate_call_data(con)
 
     def test_callend_converted_only_true(self):
+        calls = pd.from_sql(con=self.con, sql="SELECT * FROM call_data LIMIT 1000")
         self.assertTrue(
-            self.call_gen[
-                (self.call_gen['CONVERTED'] == True) & (self.call_gen['CALLENDREASON'] != 'Converted')
+            calls[
+                (calls['CONVERTED'] == True) & (calls['CALLENDREASON'] != 'Converted')
                 ].shape[0] == 0
         )
 
@@ -29,7 +33,3 @@ class TestDatabase(unittest.TestCase):
     def test_pull(self):
         pull = sample_calls.pull_calls(self.con)
         print(pull)
-
-    def shutdown(self):
-        self.con.close()
-        os.remove(self.test_db_path)

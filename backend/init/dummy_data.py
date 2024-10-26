@@ -23,7 +23,7 @@ def create_datedim(con: sqlite3.Connection):
     datedf['YEARWEEK'] = datedf['DATE'].apply(lambda x: x.strftime('%Y%W'))
 
     datedf.to_sql(
-        if_exists='replace',
+        if_exists='fail',
         index=False,
         con=con,
         name='datedim'

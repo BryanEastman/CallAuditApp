@@ -3,7 +3,6 @@ import pandas as pd
 import datetime as dt
 
 def pull_calls(con: sqlite3.Connection) -> pd.DataFrame:
-
     query = """
         WITH date_window AS (
             SELECT date, weekday
@@ -13,18 +12,30 @@ def pull_calls(con: sqlite3.Connection) -> pd.DataFrame:
             ORDER BY date DESC
             LIMIT 2
         )
+        , sample_window AS (
+            SELECT *
+            FROM call_data
+            WHERE callstartdate BETWEEN (
+                    SELECT date
+                    FROM date_window
+                    WHERE weekday = 'Wednesday'
+                ) AND (
+                    SELECT date
+                    FROM date_window
+                    WHERE weekday = 'Sunday'
+                )
+                AND callendreason IN ('Converted','ClientHangup')
+        )
 
         SELECT *
-        FROM call_data
-        WHERE callstartdate BETWEEN (
-            SELECT date
-            FROM date_window
-            WHERE weekday = 'Wednesday'
-        ) AND (
-            SELECT date
-            FROM date_window
-            WHERE weekday = 'Sunday'
+        FROM sample_window
+        WHERE agentid NOT IN ( --prefilter to min sample
+            SELECT DISTINCT agentid
+            FROM sample_window
+            GROUP BY callendreason, agentid
+            HAVING COUNT(*) < 2
         )
+
     """
 
     calls = pd.read_sql(
@@ -34,5 +45,12 @@ def pull_calls(con: sqlite3.Connection) -> pd.DataFrame:
 
     return calls
 
-def sample_calls(calls_df: pd.DataFrame):
-    return
+def generate_sample(calls_df: pd.DataFrame) -> pd.DataFrame:
+    param_grouping = calls_df.groupby(['CALLENDREASON','AGENTID'])
+    sampled = param_grouping.sample(n=2)
+
+    return sampled.sort_values('AGENTID')
+
+if __name__=="__main__":
+    con = sqlite3.connect(r'/home/beastman/Projects/Portfolio/CallAuditApp/data/test/test_tables.db')
+    calls = pull_calls(con)

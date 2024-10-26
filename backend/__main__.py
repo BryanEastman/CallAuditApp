@@ -1,5 +1,6 @@
 import cmd
 import sqlite3
+import pandas as pd
 
 from init import database, dummy_data
 from selection import sample_calls
@@ -19,7 +20,9 @@ class Auditor(cmd.Cmd):
 
     def do_sample_calls(self, arg):
         "Fetches a sample of calls and writes to file"
-        sample_calls.pull_calls(self.con)
+        calls = sample_calls.pull_calls(self.con)
+        sample = sample_calls.generate_sample(calls)
+        pd.to_sql(name='audits', con=self.con, if_exists='append',index=False)
 
     def do_quit(self, arg):
         "Close databse connection and exit"

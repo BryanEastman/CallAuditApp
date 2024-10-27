@@ -9,7 +9,8 @@ class Auditor(cmd.Cmd):
     intro = "Welcome to call audit controller, Type help or ? to list commands"
     prompt = "(audits) >> "
 
-    db_path = r'../data/tables.db'
+    db_path = r'./data/tables.db'
+    app_database = r'../frontend/data/state.db'
     con = sqlite3.connect(db_path)
 
     def do_initialize(self, arg):
@@ -22,7 +23,32 @@ class Auditor(cmd.Cmd):
         "Fetches a sample of calls and writes to file"
         calls = sample_calls.pull_calls(self.con)
         sample = sample_calls.generate_sample(calls)
-        pd.to_sql(name='audits', con=self.con, if_exists='append',index=False)
+        # TODO abstract this into a function to clean up
+        form_cols = [
+            "QA_INTRODUCTION",
+            "QA_OBJECTION",
+            "QA_SCRIPT",
+            "QA_VERIFICATION",
+            "QA_TONE",
+            "QA_DEADAIR",
+            "QA_NOTES",
+            "TL_INTRODUCTION",
+            "TL_OBJECTION",
+            "TL_SCRIPT",
+            "TL_VERIFICATION",
+            "TL_TONE",
+            "TL_DEADAIR",
+            "TL_NOTES",
+            ]
+        form = sample.reindex(
+            columns = sample.columns.tolist() + form_cols
+        )
+        form.to_sql(
+            name='audits',
+            con=sqlite3.connect(self.app_database),
+            if_exists='replace',
+            index=False
+        )
 
     def do_quit(self, arg):
         "Close databse connection and exit"

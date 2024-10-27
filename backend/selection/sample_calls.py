@@ -52,5 +52,5 @@ def generate_sample(calls_df: pd.DataFrame) -> pd.DataFrame:
     return sampled.sort_values('AGENTID')
 
 if __name__=="__main__":
-    con = sqlite3.connect(r'/home/beastman/Projects/Portfolio/CallAuditApp/data/test/test_tables.db')
+    con = sqlite3.connect(r'/home/beastman/Projects/Portfolio/CallAuditApp/backend/data/test/test_tables.db')
     calls = pull_calls(con)

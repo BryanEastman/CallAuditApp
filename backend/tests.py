@@ -9,7 +9,7 @@ import os
 
 class TestDatabase(unittest.TestCase):
 
-    test_db_path = rf'../data/test/test_tables.db'
+    test_db_path = rf'./data/test/test_tables.db'
     con = sqlite3.connect(test_db_path)
     cur = con.cursor()
 

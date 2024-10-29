@@ -1,3 +1,4 @@
+from contextlib import _RedirectStream
 from fasthtml.common import *
 
 formtype = 'unset'
@@ -38,11 +39,11 @@ app = FastHTML(
 )
 rt = app.route
 
-#TODO fix this
+#TODO fix this, use htmx and not abuse global state
 @patch
 def __ft__(self: Audits):
     formelements = P("missing")
-    def forminput(item: Str, element, desc: str):
+    def forminput(item: Str, element, field, desc: str):
         label_input = Container(
             Grid(
                 H3(
@@ -50,7 +51,8 @@ def __ft__(self: Audits):
                 ),
                 Div(
                     Input(
-                        name = element,
+                        id = element,
+                        name = field,
                         type="checkbox",
                         role="switch"
                     )
@@ -82,37 +84,43 @@ def __ft__(self: Audits):
             Container(
                 forminput(
                     'Introduction',
-                    self.TL_INTRODUCTION,
+                    self.TL_INTRODUCTION, 'TL_INTRODUCTION',
                     "Agent began with a warm opening explained purpose of the call."
                 ),
                 forminput(
                     'Objection',
-                    self.TL_OBJECTION,
+                    self.TL_OBJECTION, 'TL_OBJECTION',
                     "Agent acknowledged and attempted to overcome client objections."
                 ),
                 forminput(
                     'Script',
-                    self.TL_SCRIPT,
+                    self.TL_SCRIPT, 'TL_SCRIPT',
                     "Agent followed the correcct scripting."
                 ),
                 forminput(
                     'Verification',
-                    self.TL_VERIFICATION,
+                    self.TL_VERIFICATION, 'TL_VERIFICATION',
                     "Agent verified client information and eligibility."
                 ),
                 forminput(
                     'Tone',
-                    self.TL_TONE,
+                    self.TL_TONE, 'TL_TONE',
                     "Agent spoke clearly and with a friendly attitude."
                 ),
                 forminput(
                     'Deadair',
-                    self.TL_DEADAIR,
+                    self.TL_DEADAIR, 'TL_DEADAIR',
                     "Agent did not leave excessive (5+ seconds) of silence without speaking."
                 ),
+                Input(
+                    value=self.CALLID,
+                    name='CALLID',
+                    hidden=True
+                ),
                 Textarea(
-                    'Notes',
-                    name=self.TL_NOTES
+                    placeholder='Notes',
+                    value=self.TL_NOTES,
+                    name='TL_NOTES'
                 ),
                 Input(
                     type='submit'
@@ -131,37 +139,38 @@ def __ft__(self: Audits):
             Container(
                 forminput(
                     'Introduction',
-                    self.QA_INTRODUCTION,
+                    self.QA_INTRODUCTION, 'QA_INTRODUCTION',
                     "Agent began with a warm opening explained purpose of the call."
                 ),
                 forminput(
                     'Objection',
-                    self.QA_OBJECTION,
+                    self.QA_OBJECTION, 'QA_OBJECTION',
                     "Agent acknowledged and attempted to overcome client objections."
                 ),
                 forminput(
                     'Script',
-                    self.QA_SCRIPT,
+                    self.QA_SCRIPT, 'QA_SCRIPT',
                     "Agent followed the correcct scripting."
                 ),
                 forminput(
                     'Verification',
-                    self.QA_VERIFICATION,
+                    self.QA_VERIFICATION, 'QA_VERIFICATION',
                     "Agent verified client information and eligibility."
                 ),
                 forminput(
                     'Tone',
-                    self.QA_TONE,
+                    self.QA_TONE, 'QA_TONE',
                     "Agent spoke clearly and with a friendly attitude."
                 ),
                 forminput(
                     'Deadair',
-                    self.QA_DEADAIR,
+                    self.QA_DEADAIR, 'QA_DEADAIR',
                     "Agent did not leave excessive (5+ seconds) of silence without speaking."
                 ),
                 Textarea(
-                    'Notes',
-                    name=self.QA_NOTES
+                    placeholder='Notes',
+                    value=self.QA_NOTES,
+                    name='QA_NOTES'
                 ),
                 Input(
                     type='submit'
@@ -169,11 +178,12 @@ def __ft__(self: Audits):
                 )
             )
         )
-
+        print(f'/{formtype}/{self.CALLID}')
     return Form(
         formelements
+        , action=f'/submit'
+        , method='post'
     )
-
 
 @rt('/leader')
 def director_form():
@@ -186,6 +196,14 @@ def auditor_form():
     global formtype
     formtype = 'auditor'
     return audits()
+
+async def submit_form(request):
+    print('endpoint hit')
+    form_data = await request.form()
+    print(form_data)
+    return RedirectResponse(f'/{formtype}', status_code=303)
+
+app.post('/submit')(submit_form)
 
 @rt('/')
 def get():

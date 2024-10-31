@@ -23,6 +23,7 @@ class Auditor(cmd.Cmd):
         "Fetches a sample of calls and writes to file"
         calls = sample_calls.pull_calls(self.con)
         sample = sample_calls.generate_sample(calls)
+        aud_assigned = sample_calls.assign_auditor(sample, ['A1','A2'])
         # TODO abstract this into a function to clean up
         form_cols = [
             "QA_INTRODUCTION",
@@ -40,8 +41,8 @@ class Auditor(cmd.Cmd):
             "TL_DEADAIR",
             "TL_NOTES",
             ]
-        form = sample.reindex(
-            columns = sample.columns.tolist() + form_cols
+        form = aud_assigned.reindex(
+            columns = aud_assigned.columns.tolist() + form_cols
         )
         form.to_sql(
             name='audits',

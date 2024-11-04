@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS call_data (
 
 CREATE TABLE IF NOT EXISTS audits(
     , CALLID INTEGER PRIMARY KEY
+    , INSERTEDDATETIME CURRENT_TIMESTAMP
     , CALLSTARTDATE DATE NOT NULL
     , CONVERTED BOOL NOT NULL
     , CALLENDREASON TEXT NOT NULL
@@ -41,7 +42,6 @@ CREATE TABLE IF NOT EXISTS audits(
     , QA_TONE TEXT
     , QA_DEADAIR TEXT
     , QA_NOTES TEXT
-    , QA_SUBMISSIONDATE TEXT
     , TL_INTRODUCTION TEXT
     , TL_OBJECTION TEXT
     , TL_SCRIPT TEXT
@@ -49,11 +49,11 @@ CREATE TABLE IF NOT EXISTS audits(
     , TL_TONE TEXT
     , TL_DEADAIR TEXT
     , TL_NOTES TEXT
-    , TL_SUBMISSIONDATE TEXT
 );
 
 CREATE TABLE IF NOT EXISTS corrections(
     CORRECTIONID INTEGER PRIMARY KEY
+    , CORRECTIONINSERTEDDATETIME CURRENT_TIMESTAMP
     , CALLID INTEGER NOT NULL
     , CALLSTARTDATE DATE NOT NULL
     , CONVERTED BOOL NOT NULL
@@ -61,13 +61,63 @@ CREATE TABLE IF NOT EXISTS corrections(
     , AGENTTITLE TEXT NOT NULL
     , AGENTID INTEGER NOT NULL
     , AGENTLEADERID INTEGER NOT NULL
-    , INTRODUCTION BOOL
-    , OBJECTION BOOL
-    , SCRIPT BOOL
-    , VERIFICATION BOOL
-    , TONE BOOL
-    , DEADAIR BOOL
-    , NOTES TEXT
-    , APPROVED BOOL
+    , QA_INTRODUCTION BOOL
+    , QA_OBJECTION BOOL
+    , QA_SCRIPT BOOL
+    , QA_VERIFICATION BOOL
+    , QA_TONE BOOL
+    , QA_DEADAIR BOOL
+    , QA_NOTES TEXT
+    , TL_INTRODUCTION BOOL
+    , TL_OBJECTION BOOL
+    , TL_SCRIPT BOOL
+    , TL_VERIFICATION BOOL
+    , TL_TONE BOOL
+    , TL_DEADAIR BOOL
+    , TL_NOTES TEXT
     , FOREIGN KEY(CALLID) REFERENCES audits(CALLID)
 );
+
+CREATE TEMPORARY VIEW IF NOT EXISTS dashboard(
+    WITH combined_forms AS (
+        SELECT *
+        FROM audits a
+            WHERE a.callid NOT IN (
+                SELECT DISTINCT CALLID
+                FROM corrections c
+            )
+
+        UNION ALL
+
+        SELECT CALLID
+            , CALLSTARTDATE
+            , CONVERTED
+            , CALLENDREASON
+            , AGENTTITLE
+            , AGENTID
+            , AGENTLEADERID
+            , QA_INTRODUCTION
+            , QA_OBJECTION
+            , QA_SCRIPT
+            , QA_VERIFICATION
+            , QA_TONE
+            , QA_DEADAIR
+            , QA_NOTES
+            , TL_INTRODUCTION
+            , TL_OBJECTION
+            , TL_SCRIPT
+            , TL_VERIFICATION
+            , TL_TONE
+            , TL_DEADAIR
+            , TL_NOTES
+        FROM (
+            SELECT *
+                , ROW_NUMBER() OVER(
+                    PARTITION BY callid
+                    ORDER BY CORRECTIONINSERTEDDATETIME DESC
+                ) last_submission
+            FROM corrections
+        ) c
+        WHERE c.last_submission = 1
+    )
+)

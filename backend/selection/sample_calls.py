@@ -9,7 +9,8 @@ def pull_calls(con: sqlite3.Connection) -> pd.DataFrame:
             SELECT date, weekday
             FROM datedim
             WHERE weekday IN ('Sunday','Wednesday')
-                AND YEARWEEK < strftime('%Y%W', 'now')
+                -- AND YEARWEEK < strftime('%Y%W', 'now')
+                AND YEARWEEK = 202436
             ORDER BY date DESC
             LIMIT 2
         )
@@ -71,6 +72,33 @@ def assign_auditor(sample_df: pd.DataFrame, auditors: list) -> pd.DataFrame:
     )
 
     return merged
+
+def format_audits(aud_con: sqlite3.Connection, assignment_df: pd.DataFrame):
+    form_cols = [
+        "QA_INTRODUCTION",
+        "QA_OBJECTION",
+        "QA_SCRIPT",
+        "QA_VERIFICATION",
+        "QA_TONE",
+        "QA_DEADAIR",
+        "QA_NOTES",
+        "TL_INTRODUCTION",
+        "TL_OBJECTION",
+        "TL_SCRIPT",
+        "TL_VERIFICATION",
+        "TL_TONE",
+        "TL_DEADAIR",
+        "TL_NOTES",
+        ]
+    form = assignment_df.reindex(
+        columns = assignment_df.columns.tolist() + form_cols
+    )
+    form.to_sql(
+        name='audits',
+        con=aud_con,
+        if_exists='replace',
+        index=False
+    )
 
 if __name__=="__main__":
     con = sqlite3.connect(r'/home/beastman/Projects/Portfolio/CallAuditApp/backend/data/test/test_tables.db')
